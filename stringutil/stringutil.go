@@ -15,7 +15,7 @@ func AtoiWithLogging(input string) int {
 	if i, err := strconv.Atoi(input); err == nil {
 		return i
 	} else {
-		logging.Errorf("Failed to convert value %s to int", input)
+		logging.Errorf("Failed to convert value '%s' to int", input)
 		return iDefault
 	}
 }
