@@ -3,7 +3,8 @@ package errorcheck
 import (
 	"errors"
 	"fmt"
-	"github.com/alexandervantrijffel/goutil/logging"	
+
+	"github.com/alexandervantrijffel/goutil/logging"
 )
 
 func CheckPanic(e error) {
