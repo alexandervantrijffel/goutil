@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"runtime"
-	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -145,10 +144,6 @@ func getLoggingCaller(from int) string {
 
 func loggerCallerEntryResolver(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
 	enc.AppendString(getLoggingCaller(8))
-}
-
-func getStack() string {
-	return " -- " + fmt.Sprintf("%s", debug.Stack())
 }
 
 // TrimmedPath returns a package/file:line description of the caller,
