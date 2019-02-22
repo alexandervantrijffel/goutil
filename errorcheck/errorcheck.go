@@ -16,8 +16,7 @@ func CheckPanic(e error) {
 
 func CheckPanicWrap(e error, action string, v ...interface{}) {
 	if e != nil {
-		errorMessage := fmt.Sprintf(action, v...)
-		newE := errors.New(errorMessage)
+		newE := fmt.Errorf(action, v...)
 		logging.Error(newE)
 		panic(newE)
 	}
@@ -30,6 +29,14 @@ func CheckLogf(e error, action string, v ...interface{}) error {
 	}
 	return e
 }
+
+func CheckLogFatalf(e error, action string, v ...interface{}) {
+	if e != nil {
+		newE := fmt.Errorf(action, v...)
+		logging.Fatal(newE)
+	}
+}
+
 func LogAndWrapAsErrorWarning(action string, v ...interface{}) error {
 	errorMessage := fmt.Sprintf(action, v...)
 	logging.Warning(errorMessage)
