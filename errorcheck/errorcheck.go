@@ -30,6 +30,12 @@ func CheckLogf(e error, action string, v ...interface{}) error {
 	return e
 }
 
+func CheckLogFatal(e error, action string) {
+	if e != nil {
+		logging.Fatal(action)
+	}
+}
+
 func CheckLogFatalf(e error, action string, v ...interface{}) {
 	if e != nil {
 		newE := fmt.Errorf(action, v...)
