@@ -19,3 +19,9 @@ func AtoiWithLogging(input string) int {
 		return iDefault
 	}
 }
+func Truncate(s string, maxChars int) string {
+	if len(s) > maxChars {
+		return s[:maxChars-1] + " *SNIP*"
+	}
+	return s
+}
