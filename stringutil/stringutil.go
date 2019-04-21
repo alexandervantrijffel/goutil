@@ -25,3 +25,6 @@ func Truncate(s string, maxChars int) string {
 	}
 	return s
 }
+func EqualsCaseInsensitive(a, b string) (equal bool) {
+	return strings.ToLower(strings.TrimSpace(a)) == strings.ToLower(strings.TrimSpace(b))
+}
