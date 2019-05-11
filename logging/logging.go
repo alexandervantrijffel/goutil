@@ -27,12 +27,14 @@ func InitWith(myAppName string, debugMode bool) {
 	dbg = debugMode
 	appName = myAppName
 	initOnce.Do(func() {
-		cfg := zap.NewDevelopmentConfig()
-		cfg.EncoderConfig = zap.NewDevelopmentEncoderConfig()
-		cfg.EncoderConfig.EncodeCaller = loggerCallerEntryResolver
-		if !dbg {
-			cfg = zap.NewProductionConfig()
+		cfg := zap.NewProductionConfig()
+		if dbg {
+			cfg = zap.NewDevelopmentConfig()
 		}
+		cfg.EncoderConfig = zap.NewProductionEncoderConfig()
+		cfg.EncoderConfig.EncodeCaller = loggerCallerEntryResolver
+		cfg.OutputPaths = []string{"stdout"}
+		cfg.Encoding = "json" // not console
 		var err error
 		logger, err = cfg.Build()
 		if err != nil {
