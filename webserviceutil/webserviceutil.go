@@ -25,6 +25,11 @@ func ReturnText(w http.ResponseWriter, data string) {
 	_, err := w.Write([]byte(data))
 	_ = errorcheck.CheckLogf(err, "Failed to return http messaage %s", data)
 }
+func Return(rw http.ResponseWriter, statusCode int, data map[string]interface{}) {
+	rw.Header().Set("Content-Type", "application/json; charset=utf-8")
+	rw.WriteHeader(statusCode)
+	_ = json.NewEncoder(rw).Encode(&data)
+}
 
 type StatusMessageResponse struct {
 	Description string `json:"description"`
