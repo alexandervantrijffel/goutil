@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"runtime/debug"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/alexandervantrijffel/goutil/iputil"
 	"github.com/alexandervantrijffel/goutil/logging"
 	"gitlab.com/avtnl/ps-737migration-be/workspace/throttling"
-	"gitlab.com/avtnl/ps-737migration-be/workspace/util"
 )
 
 func ReturnText(w http.ResponseWriter, data string) {
@@ -49,31 +47,9 @@ func ReturnFile(w http.ResponseWriter, r *http.Request, file []byte, filename st
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(file))
 }
-func GetIP(req *http.Request) (remoteIP string) {
-	ip, _, err := net.SplitHostPort(req.RemoteAddr)
-	if err != nil {
-		_ = errorcheck.CheckLogf(err, "SplitHostPort failed, remoteIP:", remoteIP)
-		ip = req.RemoteAddr
-	}
-
-	if iputil.IPIsValidAndRemote(ip) {
-		remoteIP = ip
-	} else {
-		remoteIP = fmt.Sprintf("??? '%s'", ip)
-	}
-
-	// This will only be defined when site is accessed via non-anonymous proxy
-	// and takes precedence over RemoteAddr
-	// Header.Get is case-insensitive
-	forward := req.Header.Get("X-Forwarded-For")
-	if util.IPIsValid(forward) {
-		remoteIP = forward
-	}
-	return
-}
 
 func VerifyRemoteIPIsBannedAndReject(r *http.Request, rw http.ResponseWriter) (remoteAddress string, isBanned bool) {
-	remoteAddress = GetIP(r)
+	remoteAddress = iputil.GetIP(r)
 	if throttling.IsBanned(remoteAddress) {
 		ReplyUnauthorized(rw)
 		isBanned = true
@@ -86,7 +62,7 @@ func ReplyUnauthorized(rw http.ResponseWriter) {
 }
 
 func HandleUnauthorized(remoteAddress string, token string, method string, r *http.Request, rw http.ResponseWriter) {
-	logging.Warningf("Could not authenticate user with token %s, ip %+v", token, GetIP(r))
+	logging.Warningf("Could not authenticate user with token %s, ip %+v", token, iputil.GetIP(r))
 	ReplyUnauthorized(rw)
 	throttling.RegisterFailedVisit([]string{remoteAddress})
 }
