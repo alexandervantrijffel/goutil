@@ -13,10 +13,13 @@ import (
 func GetIP(req *http.Request) (remoteIP string) {
 	ip, _, err := net.SplitHostPort(req.RemoteAddr)
 	if err != nil {
-		_ = errorcheck.CheckLogf(err, "SplitHostPort failed, remoteIP:", remoteIP)
+		if !strings.Contains(err.Error(), "missing port in address") {
+			_ = errorcheck.CheckLogf(err, "SplitHostPort failed, remoteIP:", remoteIP)
+		}
 		ip = req.RemoteAddr
 	}
 
+	ip = removeReverseProxyIP(ip)
 	if IPIsValidAndRemote(ip) {
 		remoteIP = ip
 	} else {
@@ -27,17 +30,17 @@ func GetIP(req *http.Request) (remoteIP string) {
 	// and takes precedence over RemoteAddr
 	// Header.Get is case-insensitive
 	forward := req.Header.Get("X-Forwarded-For")
+	forward = removeReverseProxyIP(forward)
 	if IPIsValidAndRemote(forward) {
 		remoteIP = forward
 	}
 	return
 }
 
-func IPIsValidAndRemote(anIp string) bool {
-	if len(anIp) == 0 {
+func IPIsValidAndRemote(ip string) bool {
+	if len(ip) == 0 {
 		return false
 	}
-	ip := removeReverseProxyIP(anIp)
 
 	userIP := net.ParseIP(ip)
 	if userIP == nil {
