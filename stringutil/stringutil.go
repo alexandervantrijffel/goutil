@@ -29,3 +29,11 @@ func Truncate(s string, maxChars int) string {
 func EqualsCaseInsensitive(a, b string) (equal bool) {
 	return strings.EqualFold(strings.TrimSpace(a), strings.TrimSpace(b))
 }
+
+// Returns empty string in case the argument is a nil pointer
+func SafeDereferenceString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
