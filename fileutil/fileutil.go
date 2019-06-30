@@ -1,84 +1,99 @@
 package fileutil
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
+	"path"
+
+	"github.com/pkg/errors"
+
+	"github.com/alexandervantrijffel/goutil/errorcheck"
+	"github.com/alexandervantrijffel/goutil/logging"
 )
 
-func StoreFile(path string, name string, fileHeader *multipart.FileHeader) error {
-	f, err := os.Create(path + name)
-	if err != nil {
-		return errors.New("failed to create file")
-	}
-	defer f.Close()
-	file, err := fileHeader.Open()
-	if err != nil {
-		return errors.New("failed to read file")
-	}
-	defer file.Close()
-	_, err = io.Copy(f, file)
-	if err != nil {
-		return errors.New("failed to copy file")
-	}
-	return nil
-}
-
-func CopyFile(source string, dest string) error {
+func CopyFile(source string, dest string) (err error) {
+	defer func() {
+		err = errorcheck.CheckLogf(err, "Failed to copy file from '%s' to '%s'", source, dest)
+	}()
 	sourcefile, err := os.Open(source)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Failed to open '%s'", source)
 	}
 	defer sourcefile.Close()
 	destfile, err := os.Create(dest)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "Failed to create '%s'", dest)
 	}
 	defer destfile.Close()
 	_, err = io.Copy(destfile, sourcefile)
-	if err == nil {
-		sourceinfo, err := os.Stat(source)
-		if err != nil {
-			return os.Chmod(dest, sourceinfo.Mode())
-		}
+	if err != nil {
+		return errors.Wrapf(err, "Failed to copy")
 	}
-	return nil
+	sourceinfo, err := os.Stat(source)
+	if err == nil {
+		return os.Chmod(dest, sourceinfo.Mode())
+	}
+	return nil // ignore setting chmod error
 }
 
-func CopyDir(source string, dest string) error {
-	// get properties of source dir
+func CopyDir(source string, dest string) (err error) {
+	defer func() {
+		err = errorcheck.CheckLogf(err, "Failed to copy dir '%s' to '%s'", source, dest)
+	}()
 	sourceinfo, err := os.Stat(source)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to get properties of source dir")
 	}
-	// create dest dir
 	err = os.MkdirAll(dest, sourceinfo.Mode())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to create destination file")
 	}
 	directory, _ := os.Open(source)
 	objects, err := directory.Readdir(-1)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to read from source directory")
 	}
 	for _, obj := range objects {
-		sourcefilepointer := source + "/" + obj.Name()
-		destinationfilepointer := dest + "/" + obj.Name()
+		currentSource := path.Join(source, obj.Name())
+		currentDestination := path.Join(dest, obj.Name())
 		if obj.IsDir() {
-			// create sub-directories - recursively
-			err = CopyDir(sourcefilepointer, destinationfilepointer)
+			err = CopyDir(currentSource, currentDestination)
 			if err != nil {
-				fmt.Println(err)
+				return errors.Wrapf(err, "Failure while copying subfolder '%s' to '%s'", currentSource, currentDestination)
 			}
-		} else {
-			// perform copy
-			err = CopyFile(sourcefilepointer, destinationfilepointer)
+			continue
+		}
+		err = CopyFile(currentSource, currentDestination)
+		if err != nil {
 			if err != nil {
-				fmt.Println(err)
+				return errors.Wrapf(err, "Failure while copying file '%s' to '%s'", currentSource, currentDestination)
 			}
 		}
 	}
-	return nil
+	return
+}
+
+func StoreMultipartFile(folder string, name string, fileHeader *multipart.FileHeader) (err error) {
+	defer func() {
+		err = errorcheck.CheckLogf(err, "Failed to store file %s/%s", folder, name)
+	}()
+
+	filePath := path.Join(folder, name)
+	f, err := os.Create(filePath)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create file")
+	}
+	defer f.Close()
+	file, err := fileHeader.Open()
+	if err != nil {
+		err = errors.Wrap(err, "failed to read file")
+	}
+	defer file.Close()
+	_, err = io.Copy(f, file)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy file")
+	}
+	logging.Debugf("Stored file %s", filePath)
+	return
 }
