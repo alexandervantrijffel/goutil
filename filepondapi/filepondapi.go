@@ -52,17 +52,23 @@ func FilePondProcess(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	defer func() {
 		_ = r.MultipartForm.RemoveAll()
 	}()
+
+	var filesList []string
 	for _, files := range r.MultipartForm.File {
 		for _, file := range files {
+			// warning: overwrites existing files!
 			err = fileutil.StoreMultipartFile(theConfig.UploadBasePath, file.Filename, file)
 			if err != nil {
 				webserviceutil.ReturnStatusMessageResponse(w, http.StatusInternalServerError,
 					fmt.Sprintf("Failed to store file %s", file.Filename))
 				return
 			}
+			filesList = append(filesList, path.Join(theConfig.BaseUrl, file.Filename))
 		}
 	}
-	// webserviceutil.ReturnText(w, "Failed")
+	resp := map[string]interface{}{"description": "Operation succeeded"}
+	resp["files"] = filesList
+	webserviceutil.Return(w, http.StatusOK, resp)
 }
 
 func FilePondDelete(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -98,7 +104,7 @@ type ConfirmMessage struct {
 
 func FilePondProcessSubmitForm(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	req := &ConfirmMessage{}
-	var filesList = make([]string, 0)
+	var filesList []string
 	err := json.NewDecoder(r.Body).Decode(req)
 	if err != nil {
 		_ = errorcheck.CheckLogf(err, "Failed to decode request body")
