@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"runtime/debug"
 	"time"
 
@@ -38,14 +40,27 @@ func ReturnStatusMessageResponse(rw http.ResponseWriter, statusCode int, descrip
 	rw.WriteHeader(statusCode)
 	_ = json.NewEncoder(rw).Encode(&StatusMessageResponse{description})
 }
-func ReturnFile(w http.ResponseWriter, r *http.Request, file []byte, filename string) {
+
+func ReturnFile(w http.ResponseWriter, r *http.Request, filePath string, fileName string) error {
+	file, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		ReturnStatusMessageResponse(w, http.StatusNotFound, "Cannot find the specified file")
+		return errorcheck.CheckLogf(err, "Failed to read file '%s'", file)
+	}
 	w.Header().Add("Content-Disposition", "inline")
-	w.Header().Add("filename", filename)
+	w.Header().Add("filename", fileName)
 	w.Header().Add("Access-Control-Allow-Credentials", "true")
 	w.Header().Add("Access-Control-Allow-Headers", "Accept, X-Access-Token, X-Application-Name, X-Request-Sent-Time")
 	w.Header().Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-	http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(file))
+
+	modified := time.Now()
+	f, err := os.Stat(filePath)
+	if err == nil {
+		modified = f.ModTime()
+	}
+	http.ServeContent(w, r, fileName, modified, bytes.NewReader(file))
+	return nil
 }
 
 func VerifyRemoteIPIsBannedAndReject(r *http.Request, rw http.ResponseWriter) (remoteAddress string, isBanned bool) {
