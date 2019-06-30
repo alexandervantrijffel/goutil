@@ -79,6 +79,10 @@ func StoreMultipartFile(folder string, name string, fileHeader *multipart.FileHe
 		err = errorcheck.CheckLogf(err, "Failed to store file %s/%s", folder, name)
 	}()
 
+	err = os.Mkdir(folder, os.ModePerm)
+	if err != nil {
+		err = errors.Wrap(err, "failed to create folder")
+	}
 	filePath := path.Join(folder, name)
 	f, err := os.Create(filePath)
 	if err != nil {
