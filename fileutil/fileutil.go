@@ -18,17 +18,19 @@ func CopyFile(source string, dest string) (err error) {
 	}()
 	sourcefile, err := os.Open(source)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to open '%s'", source)
+		err = errors.Wrapf(err, "Failed to open '%s'", source)
+		return
 	}
 	defer sourcefile.Close()
 	destfile, err := os.Create(dest)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to create '%s'", dest)
+		err = errors.Wrapf(err, "Failed to create '%s'", dest)
+		return
 	}
 	defer destfile.Close()
 	_, err = io.Copy(destfile, sourcefile)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to copy")
+		err = errors.Wrapf(err, "Failed to copy")
 	}
 	sourceinfo, err := os.Stat(source)
 	if err == nil {
@@ -43,16 +45,19 @@ func CopyDir(source string, dest string) (err error) {
 	}()
 	sourceinfo, err := os.Stat(source)
 	if err != nil {
-		return errors.Wrap(err, "Failed to get properties of source dir")
+		err = errors.Wrap(err, "Failed to get properties of source dir")
+		return
 	}
 	err = os.MkdirAll(dest, sourceinfo.Mode())
 	if err != nil {
-		return errors.Wrap(err, "Failed to create destination file")
+		err = errors.Wrap(err, "Failed to create destination file")
+		return
 	}
 	directory, _ := os.Open(source)
 	objects, err := directory.Readdir(-1)
 	if err != nil {
-		return errors.Wrap(err, "Failed to read from source directory")
+		err = errors.Wrap(err, "Failed to read from source directory")
+		return
 	}
 	for _, obj := range objects {
 		currentSource := path.Join(source, obj.Name())
@@ -79,24 +84,29 @@ func StoreMultipartFile(folder string, name string, fileHeader *multipart.FileHe
 		err = errorcheck.CheckLogf(err, "Failed to store file %s/%s", folder, name)
 	}()
 
-	err = os.Mkdir(folder, os.ModePerm)
+	err = os.MkdirAll(folder, os.ModePerm)
+
 	if err != nil {
 		err = errors.Wrap(err, "failed to create folder")
+		return
 	}
 	filePath := path.Join(folder, name)
 	f, err := os.Create(filePath)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create file")
+		return
 	}
 	defer f.Close()
 	file, err := fileHeader.Open()
 	if err != nil {
 		err = errors.Wrap(err, "failed to read file")
+		return
 	}
 	defer file.Close()
 	_, err = io.Copy(f, file)
 	if err != nil {
-		return errors.Wrap(err, "failed to copy file")
+		err = errors.Wrap(err, "failed to copy file")
+		return
 	}
 	logging.Debugf("Stored file %s", filePath)
 	return
