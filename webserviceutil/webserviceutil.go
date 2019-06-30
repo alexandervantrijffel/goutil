@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"runtime/debug"
 	"time"
 
@@ -41,12 +42,13 @@ func ReturnStatusMessageResponse(rw http.ResponseWriter, statusCode int, descrip
 	_ = json.NewEncoder(rw).Encode(&StatusMessageResponse{description})
 }
 
-func ReturnFile(w http.ResponseWriter, r *http.Request, filePath string, fileName string) error {
+func ReturnFile(w http.ResponseWriter, r *http.Request, filePath string) error {
 	file, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		ReturnStatusMessageResponse(w, http.StatusNotFound, "Cannot find the specified file")
 		return errorcheck.CheckLogf(err, "Failed to read file '%s'", file)
 	}
+	fileName := path.Base(filePath)
 	w.Header().Add("Content-Disposition", "inline")
 	w.Header().Add("filename", fileName)
 	w.Header().Add("Access-Control-Allow-Credentials", "true")
