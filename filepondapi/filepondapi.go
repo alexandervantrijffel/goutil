@@ -60,7 +60,7 @@ func FilePondProcess(w http.ResponseWriter, r *http.Request, p httprouter.Params
 			err = fileutil.StoreMultipartFile(theConfig.UploadBasePath, finalFileName, file)
 			if err != nil {
 				webserviceutil.ReturnStatusMessageResponse(w, http.StatusInternalServerError,
-					fmt.Sprintf("Failed to store file %s", file.Filename))
+					fmt.Sprintf("Failed to store file %s", finalFileName))
 				return
 			}
 			filesList = append(filesList, path.Join(theConfig.BaseUrl, finalFileName))
