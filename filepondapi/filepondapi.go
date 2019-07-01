@@ -56,8 +56,6 @@ func FilePondProcess(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	var filesList []string
 	for _, files := range r.MultipartForm.File {
 		for _, file := range files {
-			// warning: overwrites existing files!
-
 			finalFileName := fileNameAugmenter(file.Filename)
 			err = fileutil.StoreMultipartFile(theConfig.UploadBasePath, finalFileName, file)
 			if err != nil {
