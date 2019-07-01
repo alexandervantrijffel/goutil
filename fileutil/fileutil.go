@@ -12,37 +12,36 @@ import (
 	"github.com/alexandervantrijffel/goutil/logging"
 )
 
-func CopyFile(source string, dest string) (err error) {
+func CopyFile(source string, dest string) error {
+	var err error
 	defer func() {
 		err = errorcheck.CheckLogf(err, "Failed to copy file from '%s' to '%s'", source, dest)
 	}()
 	sourcefile, err := os.Open(source)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to open '%s'", source)
+		err = errors.Wrapf(err, "Failed to open source")
 		return
 	}
 	defer sourcefile.Close()
 	destfile, err := os.Create(dest)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to create '%s'", dest)
+		err = errors.Wrapf(err, "Failed to create destination")
 		return
 	}
 	defer destfile.Close()
-	_, err = io.Copy(destfile, sourcefile)
-	if err != nil {
+	if _, err = io.Copy(destfile, sourcefile); err != nil {
 		err = errors.Wrapf(err, "Failed to copy")
 	}
-	sourceinfo, err := os.Stat(source)
-	if err == nil {
+	if sourceinfo, err := os.Stat(source); err == nil {
 		return os.Chmod(dest, sourceinfo.Mode())
 	}
 	return nil // ignore setting chmod error
 }
 
-func CopyDir(source string, dest string) (err error) {
-	defer func() {
-		err = errorcheck.CheckLogf(err, "Failed to copy dir '%s' to '%s'", source, dest)
-	}()
+func CopyDir(source string, dest string) error {
+	return errorcheck.CheckLogf(copyDir, "Failed to copy dir '%s' to '%s'", source, dest)
+}
+func copyDir(source string, dest string) error {
 	sourceinfo, err := os.Stat(source)
 	if err != nil {
 		err = errors.Wrap(err, "Failed to get properties of source dir")

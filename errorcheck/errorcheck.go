@@ -1,10 +1,10 @@
 package errorcheck
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/alexandervantrijffel/goutil/logging"
+	"github.com/pkg/errors"
 )
 
 func CheckPanic(e error) {
@@ -16,7 +16,7 @@ func CheckPanic(e error) {
 
 func CheckPanicWrap(e error, action string, v ...interface{}) {
 	if e != nil {
-		newE := fmt.Errorf(action, v...)
+		newE := errors.Wrapf(e, action, v...)
 		logging.Error(newE)
 		panic(newE)
 	}
@@ -25,7 +25,9 @@ func CheckPanicWrap(e error, action string, v ...interface{}) {
 // CheckLogf if e != nil enriches the error message with the action text and additional context from v... and returns the extended error, otherwise nil
 func CheckLogf(e error, action string, v ...interface{}) error {
 	if e != nil {
-		e = LogAndWrapAsError(fmt.Sprintf(action+" Error: "+e.Error(), v...))
+		err := errors.Wrapf(e, action, v...)
+		logging.Error(err)
+		return err
 	}
 	return e
 }
@@ -38,7 +40,7 @@ func CheckLogFatal(e error, action string) {
 
 func CheckLogFatalf(e error, action string, v ...interface{}) {
 	if e != nil {
-		newE := fmt.Errorf(action, v...)
+		newE := errors.Wrapf(e, action, v...)
 		logging.Fatal(newE)
 	}
 }
