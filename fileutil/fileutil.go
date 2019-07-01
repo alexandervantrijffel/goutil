@@ -5,11 +5,13 @@ import (
 	"mime/multipart"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/pkg/errors"
 
 	"github.com/alexandervantrijffel/goutil/errorcheck"
 	"github.com/alexandervantrijffel/goutil/logging"
+	"github.com/alexandervantrijffel/goutil/stringutil"
 )
 
 func CopyFile(source string, dest string) error {
@@ -91,4 +93,14 @@ func StoreMultipartFile(folder string, name string, fileHeader *multipart.FileHe
 	}
 	logging.Debugf("Stored file %s", filePath)
 	return
+}
+func RandomizeFileName(org string) string {
+	fileName := path.Base(org)
+	folder := path.Dir(org)
+	rand := stringutil.RandomAlphanumericString(8)
+	dot := strings.Index(fileName, ".")
+	if dot == -1 {
+		return fileName + "-" + rand
+	}
+	return path.Join(folder, fileName[0:dot]+"-"+rand+fileName[dot:])
 }
