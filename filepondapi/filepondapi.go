@@ -39,7 +39,7 @@ func configIsSet() bool {
 
 // based on https://github.com/AlexandrDobrovolskiy/storage/blob/master/controllers/files.go
 
-func FilePondProcess(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func FilePondProcess(w http.ResponseWriter, r *http.Request, p httprouter.Params, fileNameAugmenter func(string) string) {
 	if !configIsSet() {
 		return
 	}
@@ -57,13 +57,15 @@ func FilePondProcess(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	for _, files := range r.MultipartForm.File {
 		for _, file := range files {
 			// warning: overwrites existing files!
-			err = fileutil.StoreMultipartFile(theConfig.UploadBasePath, file.Filename, file)
+
+			finalFileName := fileNameAugmenter(file.Filename)
+			err = fileutil.StoreMultipartFile(theConfig.UploadBasePath, finalFileName, file)
 			if err != nil {
 				webserviceutil.ReturnStatusMessageResponse(w, http.StatusInternalServerError,
 					fmt.Sprintf("Failed to store file %s", file.Filename))
 				return
 			}
-			filesList = append(filesList, path.Join(theConfig.BaseUrl, file.Filename))
+			filesList = append(filesList, path.Join(theConfig.BaseUrl, finalFileName))
 		}
 	}
 	resp := map[string]interface{}{"description": "Operation succeeded"}

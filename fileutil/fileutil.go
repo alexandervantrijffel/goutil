@@ -19,14 +19,12 @@ func CopyFile(source string, dest string) error {
 	}()
 	sourcefile, err := os.Open(source)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to open source")
-		return
+		return errors.Wrapf(err, "Failed to open source")
 	}
 	defer sourcefile.Close()
 	destfile, err := os.Create(dest)
 	if err != nil {
-		err = errors.Wrapf(err, "Failed to create destination")
-		return
+		return errors.Wrapf(err, "Failed to create destination")
 	}
 	defer destfile.Close()
 	if _, err = io.Copy(destfile, sourcefile); err != nil {
@@ -39,73 +37,57 @@ func CopyFile(source string, dest string) error {
 }
 
 func CopyDir(source string, dest string) error {
-	return errorcheck.CheckLogf(copyDir, "Failed to copy dir '%s' to '%s'", source, dest)
+	return errorcheck.CheckLogf(copyDir(source, dest), "Failed to copy dir '%s' to '%s'", source, dest)
 }
 func copyDir(source string, dest string) error {
 	sourceinfo, err := os.Stat(source)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to get properties of source dir")
-		return
+		return errors.Wrap(err, "Failed to get properties of source dir")
 	}
-	err = os.MkdirAll(dest, sourceinfo.Mode())
-	if err != nil {
-		err = errors.Wrap(err, "Failed to create destination file")
-		return
+	if err = os.MkdirAll(dest, sourceinfo.Mode()); err != nil {
+		return errors.Wrap(err, "Failed to create destination file")
 	}
 	directory, _ := os.Open(source)
 	objects, err := directory.Readdir(-1)
 	if err != nil {
-		err = errors.Wrap(err, "Failed to read from source directory")
-		return
+		return errors.Wrap(err, "Failed to read from source directory")
 	}
 	for _, obj := range objects {
 		currentSource := path.Join(source, obj.Name())
 		currentDestination := path.Join(dest, obj.Name())
 		if obj.IsDir() {
-			err = CopyDir(currentSource, currentDestination)
-			if err != nil {
+			if err = CopyDir(currentSource, currentDestination); err != nil {
 				return errors.Wrapf(err, "Failure while copying subfolder '%s' to '%s'", currentSource, currentDestination)
 			}
 			continue
 		}
-		err = CopyFile(currentSource, currentDestination)
-		if err != nil {
-			if err != nil {
-				return errors.Wrapf(err, "Failure while copying file '%s' to '%s'", currentSource, currentDestination)
-			}
+		if err = CopyFile(currentSource, currentDestination); err != nil {
+			return errors.Wrapf(err, "Failure while copying file '%s' to '%s'", currentSource, currentDestination)
 		}
 	}
-	return
+	return nil
 }
 
 func StoreMultipartFile(folder string, name string, fileHeader *multipart.FileHeader) (err error) {
 	defer func() {
 		err = errorcheck.CheckLogf(err, "Failed to store file %s/%s", folder, name)
 	}()
-
-	err = os.MkdirAll(folder, os.ModePerm)
-
-	if err != nil {
-		err = errors.Wrap(err, "failed to create folder")
-		return
+	if err = os.MkdirAll(folder, os.ModePerm); err != nil {
+		return errors.Wrap(err, "failed to create folder")
 	}
 	filePath := path.Join(folder, name)
 	f, err := os.Create(filePath)
 	if err != nil {
-		err = errors.Wrap(err, "failed to create file")
-		return
+		return errors.Wrap(err, "failed to create file")
 	}
 	defer f.Close()
 	file, err := fileHeader.Open()
 	if err != nil {
-		err = errors.Wrap(err, "failed to read file")
-		return
+		return errors.Wrap(err, "failed to read file")
 	}
 	defer file.Close()
-	_, err = io.Copy(f, file)
-	if err != nil {
-		err = errors.Wrap(err, "failed to copy file")
-		return
+	if _, err = io.Copy(f, file); err != nil {
+		return errors.Wrap(err, "failed to copy file")
 	}
 	logging.Debugf("Stored file %s", filePath)
 	return
