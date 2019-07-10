@@ -1,6 +1,7 @@
 package stringutil
 
 import (
+	"encoding/json"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -61,4 +62,12 @@ func RandomAlphanumericString(n int) string {
 		remain--
 	}
 	return string(b)
+}
+func StructToTruncatedString(s interface{}, maxChars int) string {
+	marshalled, err := json.Marshal(s)
+	if err != nil {
+		logging.Errorf("Failed to marshal string %s", err.Error())
+		return "StructToTruncatedString: marshal failed"
+	}
+	return Truncate(string(marshalled), maxChars)
 }

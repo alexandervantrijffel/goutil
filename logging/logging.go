@@ -71,6 +71,9 @@ func Warning(v ...interface{}) {
 func Errorf(format string, v ...interface{}) {
 	logIt(LOGERROR, format, v...)
 }
+func Errorf1(format string, v ...interface{}) {
+	logIt(LOGERROR, format, v...)
+}
 func Error(v ...interface{}) {
 	logItNoFormat(LOGERROR, v...)
 }
