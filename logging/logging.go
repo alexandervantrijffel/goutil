@@ -167,7 +167,7 @@ func getLoggingCaller(from int) string {
 }
 
 func loggerCallerEntryResolver(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
-	enc.AppendString(getLoggingCaller(8))
+	enc.AppendString(getLoggingCaller(13))
 }
 
 // TrimmedPath returns a package/file:line description of the caller,
