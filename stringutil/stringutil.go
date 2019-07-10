@@ -2,10 +2,12 @@ package stringutil
 
 import (
 	"encoding/json"
+	"math"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/alexandervantrijffel/goutil/logging"
 )
@@ -63,6 +65,10 @@ func RandomAlphanumericString(n int) string {
 		remain--
 	}
 	return string(b)
+}
+func RandomInt(min int, max int) int {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return min + int(math.Max(float64(r.Intn(max)-min-1), 0))%max
 }
 func StructToTruncatedString(s interface{}, maxChars int) string {
 	marshalled, err := json.Marshal(s)
