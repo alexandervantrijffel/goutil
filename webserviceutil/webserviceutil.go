@@ -14,7 +14,7 @@ import (
 	"github.com/alexandervantrijffel/goutil/errorcheck"
 	"github.com/alexandervantrijffel/goutil/iputil"
 	"github.com/alexandervantrijffel/goutil/logging"
-	"gitlab.com/avtnl/ps-737migration-be/workspace/throttling"
+	"github.com/alexandervantrijffel/goutil/throttlingutil"
 )
 
 func ReturnText(w http.ResponseWriter, data string) {
@@ -67,7 +67,7 @@ func ReturnFile(w http.ResponseWriter, r *http.Request, filePath string) error {
 
 func VerifyRemoteIPIsBannedAndReject(r *http.Request, rw http.ResponseWriter) (remoteAddress string, isBanned bool) {
 	remoteAddress = iputil.GetIP(r)
-	if throttling.IsBanned(remoteAddress) {
+	if throttlingutil.IsBanned(remoteAddress) {
 		ReplyUnauthorized(rw)
 		isBanned = true
 	}
@@ -81,7 +81,7 @@ func ReplyUnauthorized(rw http.ResponseWriter) {
 func HandleUnauthorized(remoteAddress string, token string, method string, r *http.Request, rw http.ResponseWriter) {
 	logging.Warningf("Could not authenticate user with token %s, ip %+v", token, iputil.GetIP(r))
 	ReplyUnauthorized(rw)
-	throttling.RegisterFailedVisit([]string{remoteAddress})
+	throttlingutil.RegisterFailedVisit([]string{remoteAddress})
 }
 
 func toFullString(r *http.Request) string {
