@@ -5,7 +5,6 @@ import (
 	"log"
 	"runtime"
 	"strings"
-	"sync"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -18,29 +17,33 @@ const LOGERROR = "ERROR: "
 const LOGFATAL = "FATAL: "
 
 var logger *zap.Logger
-var initOnce sync.Once
 
 var appName string
 var dbg bool
+var loggerInitialized bool
+
+func init() {
+	cfg := zap.NewProductionConfig()
+	if dbg {
+		cfg = zap.NewDevelopmentConfig()
+	}
+	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
+	cfg.EncoderConfig.EncodeCaller = loggerCallerEntryResolver
+	cfg.OutputPaths = []string{"stdout"}
+	cfg.Encoding = "json" // not console
+	var err error
+	logger, err = cfg.Build()
+	if err != nil {
+		fmt.Printf("Failed to build zap logger! %+v", err)
+	}
+	appName = "unset"
+	dbg = true
+	loggerInitialized = true
+}
 
 func InitWith(myAppName string, debugMode bool) {
 	dbg = debugMode
 	appName = myAppName
-	initOnce.Do(func() {
-		cfg := zap.NewProductionConfig()
-		if dbg {
-			cfg = zap.NewDevelopmentConfig()
-		}
-		cfg.EncoderConfig = zap.NewProductionEncoderConfig()
-		cfg.EncoderConfig.EncodeCaller = loggerCallerEntryResolver
-		cfg.OutputPaths = []string{"stdout"}
-		cfg.Encoding = "json" // not console
-		var err error
-		logger, err = cfg.Build()
-		if err != nil {
-			fmt.Printf("Failed to build zap logger! %+v", err)
-		}
-	})
 }
 
 func Debugf(format string, v ...interface{}) {
@@ -87,14 +90,34 @@ func logItNoFormat(prefix string, v ...interface{}) {
 	fields := getDefaultFields()
 	switch prefix {
 	case LOGDEBUG:
+		if !loggerInitialized {
+			fmt.Printf(prefix+" (logger not initialized)\n", v...)
+			return
+		}
 		logger.Debug(msg, fields...)
 	case LOGINFO:
+		if !loggerInitialized {
+			fmt.Printf(prefix+" (logger not initialized)\n", v...)
+			return
+		}
 		logger.Info(msg, fields...)
 	case LOGWARNING:
+		if !loggerInitialized {
+			fmt.Printf(prefix+" (logger not initialized)\n", v...)
+			return
+		}
 		logger.Warn(msg, fields...)
 	case LOGERROR:
+		if !loggerInitialized {
+			fmt.Printf(prefix+" (logger not initialized)\n", v...)
+			return
+		}
 		logger.Error(msg, fields...)
 	case LOGFATAL:
+		if !loggerInitialized {
+			fmt.Printf(prefix+" (logger not initialized)\n", v...)
+			return
+		}
 		logger.Fatal(msg, fields...)
 	}
 }
@@ -112,7 +135,9 @@ func getDefaultFields() (fields []zap.Field) {
 }
 
 func Flush() {
-	flushThisLog(logger)
+	if loggerInitialized {
+		flushThisLog(logger)
+	}
 }
 
 func flushThisLog(l *zap.Logger) {
