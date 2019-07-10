@@ -83,9 +83,6 @@ func Fatal(v ...interface{}) {
 }
 
 func logItNoFormat(prefix string, v ...interface{}) {
-	if len(appName) == 0 {
-		panic("Logging not initialized, please call logging.InitWith() first.")
-	}
 	msg := fmt.Sprint(v...)
 	fields := getDefaultFields()
 	switch prefix {
