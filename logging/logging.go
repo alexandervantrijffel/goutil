@@ -23,27 +23,42 @@ var dbg bool
 var loggerInitialized bool
 
 func init() {
-	cfg := zap.NewProductionConfig()
-	if dbg {
-		cfg = zap.NewDevelopmentConfig()
-	}
-	cfg.EncoderConfig = zap.NewProductionEncoderConfig()
-	cfg.EncoderConfig.EncodeCaller = loggerCallerEntryResolver
-	cfg.OutputPaths = []string{"stdout"}
-	cfg.Encoding = "json" // not console
-	var err error
-	logger, err = cfg.Build()
-	if err != nil {
-		fmt.Printf("Failed to build zap logger! %+v", err)
-	}
-	appName = "unset"
-	dbg = true
-	loggerInitialized = true
+	InitWith("unset", true)
 }
 
 func InitWith(myAppName string, debugMode bool) {
 	dbg = debugMode
 	appName = myAppName
+	var cfg zap.Config
+	if dbg {
+		cfg = zap.NewDevelopmentConfig()
+		cfg.EncoderConfig = zapcore.EncoderConfig{
+			TimeKey:        "", // time disabled
+			LevelKey:       "L",
+			NameKey:        "N",
+			CallerKey:      "", // caller disabled
+			MessageKey:     "M",
+			StacktraceKey:  "S",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeLevel:    zapcore.CapitalLevelEncoder,
+			EncodeTime:     zapcore.ISO8601TimeEncoder,
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		}
+	} else {
+		cfg = zap.NewProductionConfig()
+		cfg.EncoderConfig = zap.NewProductionEncoderConfig()
+	}
+	cfg.OutputPaths = []string{"stdout"}
+	cfg.EncoderConfig.EncodeCaller = loggerCallerEntryResolver
+	cfg.Encoding = "json" // not console
+	var err error
+	logger, err = cfg.Build()
+	if err != nil {
+		log.Fatalf("Failed to build zap logger! %+v", err)
+		return
+	}
+	loggerInitialized = true
 }
 
 func Debugf(format string, v ...interface{}) {
