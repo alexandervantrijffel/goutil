@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/TheZeroSlave/zapsentry"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -23,10 +24,10 @@ var dbg bool
 var loggerInitialized bool
 
 func init() {
-	InitWith("unset", true)
+	InitWith("unset", true, "")
 }
 
-func InitWith(myAppName string, debugMode bool) {
+func InitWith(myAppName string, debugMode bool, sentryDsn string) {
 	dbg = debugMode
 	appName = myAppName
 	var cfg zap.Config
@@ -58,7 +59,27 @@ func InitWith(myAppName string, debugMode bool) {
 		log.Fatalf("Failed to build zap logger! %+v", err)
 		return
 	}
+	if !debugMode {
+		initSentry(sentryDsn)
+	}
 	loggerInitialized = true
+}
+
+func initSentry(dsn string) {
+	level := zapcore.ErrorLevel
+	cfg := zapsentry.Configuration{
+		Level: level,
+		Tags: map[string]string{
+			"component": "system",
+		},
+	}
+	core, err := zapsentry.NewCore(cfg, zapsentry.NewSentryClientFromDSN(dsn))
+	//in case of err it will return noop core. so we can safely attach it
+	if err != nil {
+		logger.Warn("failed to init zap")
+	}
+	logger = zapsentry.AttachCoreToLogger(core, logger)
+	logger.Info("sentry forwarding enabled", zap.Stringer("level", level))
 }
 
 func Debugf(format string, v ...interface{}) {
