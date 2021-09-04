@@ -27,7 +27,7 @@ func init() {
 	InitWith("unset", true, "")
 }
 
-func InitWith(myAppName string, debugMode bool, sentryDsn string) {
+func InitWith(myAppName string, debugMode bool, sentryDsn ...string) {
 	dbg = debugMode
 	appName = myAppName
 	var cfg zap.Config
@@ -59,8 +59,8 @@ func InitWith(myAppName string, debugMode bool, sentryDsn string) {
 		log.Fatalf("Failed to build zap logger! %+v", err)
 		return
 	}
-	if !debugMode {
-		initSentry(sentryDsn)
+	if !debugMode && len(sentryDsn) > 0{
+		initSentry(sentryDsn[0])
 	}
 	loggerInitialized = true
 }
